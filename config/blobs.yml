@@ -1,0 +1,13 @@
+---
+java7/openjdk-1.7.0_55.tar.gz:
+  object_id: 1d5cc89e-cac1-4112-bb25-9dd885c9c3c7
+  sha: 0788b91b35bfdc628143103b17de3194c39a305a
+  size: 31534443
+redis/redis-2.8.12.tar.gz:
+  object_id: f91ca50a-965b-48db-928b-b1f24d464dc0
+  sha: 56c86a4f9eccaf29f934433c7c67a175e404b2f6
+  size: 1215331
+logstash/logstash-1.4.2.tar.gz:
+  object_id: 7f609961-8eb8-4af7-adfc-7aad62eb382a
+  sha: d59ef579c7614c5df9bd69cfdce20ed371f728ff
+  size: 85619205
