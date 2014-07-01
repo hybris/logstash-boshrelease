@@ -1,0 +1,7 @@
+---
+name: logstash
+
+dependencies:
+
+files:
+- logstash/logstash-*

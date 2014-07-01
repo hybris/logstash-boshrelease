@@ -1,0 +1,15 @@
+input {
+  tcp {
+    port => <%= p('syslog.port') %>
+    type => syslog
+  }
+  udp {
+    port => <%= p('syslog.port') %>
+    type => syslog
+  }
+}
+
+output {
+  stdout { codec => json }
+  redis { host => "<%= p("redis.host") %>" port => <%= p("redis.port") %> data_type => "list" key => "<%= p('logstash.redis.key') %>" }
+}

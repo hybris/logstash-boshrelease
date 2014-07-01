@@ -1,0 +1,29 @@
+---
+name: logstash-syslog
+templates:
+   bin/syslog_ctl: bin/syslog_ctl
+   bin/monit_debugger: bin/monit_debugger
+   data/properties.sh.erb: data/properties.sh
+   helpers/ctl_setup.sh: helpers/ctl_setup.sh
+   helpers/ctl_utils.sh: helpers/ctl_utils.sh
+   config/logstash.conf.erb: config/logstash.conf
+   
+
+
+packages:
+- java7
+- logstash
+
+properties:
+  redis.port:
+    description: Port to listen for requests to redis server
+    default: 6379
+  redis.host:
+    description: Host where redis is installed
+    default: localhost
+  logstash.redis.key:
+    description: Key in redis
+    default: logstash
+  syslog.port:
+    description: which port to listen
+    default: 5000

@@ -1,0 +1,8 @@
+# abort script on any command that exit with a non zero value
+set -e
+
+VERSION=1.4.2
+
+tar xvf logstash/logstash-${VERSION}.tar.gz
+
+cp -a logstash-${VERSION}/. $BOSH_INSTALL_TARGET

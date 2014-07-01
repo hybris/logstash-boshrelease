@@ -1,0 +1,5 @@
+check process logstash-indexer
+  with pidfile /var/vcap/sys/run/logstash-indexer/logstash-indexer.pid
+  start program "/var/vcap/jobs/logstash-indexer/bin/monit_debugger indexer_ctl '/var/vcap/jobs/logstash-indexer/bin/indexer_ctl start'"
+  stop program "/var/vcap/jobs/logstash-indexer/bin/monit_debugger indexer_ctl '/var/vcap/jobs/logstash-indexer/bin/indexer_ctl stop'"
+  group vcap
