@@ -2,7 +2,7 @@ input {
   redis {
     type => "syslog"
     host => "<%= p("redis.host") %>"
-    port => <%= p("redis.port") %> 
+    port => <%= p("redis.port") %>
 
     # these settings should match the output of the agent
     data_type => "list"
@@ -10,8 +10,9 @@ input {
   }
 }
 
+
 filter {
-  if [type] == "syslog" {
+  if [type] == "syslog" and !([message] =~ /\[NXLOG/) {
     grok {
       match => { "message" => "\d <\d*>\d* %{TIMESTAMP_ISO8601:syslog_timestamp} %{USER:syslog_user} %{DATA:app_id} \[%{DATA:cf_component}\] - - %{GREEDYDATA:message}" }
       add_field => {
@@ -23,7 +24,31 @@ filter {
       match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" , "ISO8601"]
     }
   }
+
+  ###################################
+  #              NXLOG              #
+  ###################################
+  if [type] == "syslog" and [message] =~ /\[NXLOG/ {
+    grok {
+        match => [ "message", ".*\[NXLOG@14506 (?<nxlog[params]>[^\]]+)\] %{GREEDYDATA:message}" ]
+        add_tag => [ "nxlog", "bosh", "services" ]
+        add_field => { "app_id" => "nxlog" }
+        overwrite => [ "message" ]
+        tag_on_failure => [ "_grokparsefailure-nxlog" ]
+    }
+
+    if "_grokparsefailure-nxlog" not in [tags] {
+      kv { source => "nxlog[params]" }
+
+      if [bosh_deployment] {
+        mutate { update => { "app_id" => "%{bosh_deployment}" } }
+      }
+
+      mutate { remove_field => "nxlog" }
+    }
+  }
 }
+
 
 output {
   stdout { codec => json }
