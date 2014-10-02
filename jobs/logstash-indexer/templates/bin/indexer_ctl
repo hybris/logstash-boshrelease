@@ -8,6 +8,7 @@ source /var/vcap/jobs/logstash-indexer/helpers/ctl_setup.sh 'logstash-indexer'
 
 export PORT=${PORT:-5000}
 export LANG=en_US.UTF-8
+export FILTER_WORKERS=${FILTER_WORKERS:-1}
 
 case $1 in
 
@@ -18,7 +19,7 @@ case $1 in
     export JAVA_HOME=/var/vcap/packages/java7/
 
     exec /var/vcap/jobs/logstash-indexer/packages/logstash/bin/logstash \
-        agent -f /var/vcap/jobs/logstash-indexer/config/logstash.conf \
+        agent -w $FILTER_WORKERS -f /var/vcap/jobs/logstash-indexer/config/logstash.conf \
         >>  $LOG_DIR/logstash-indexer.stdout.log \
         2>> $LOG_DIR/logstash-indexer.stderr.log &
 

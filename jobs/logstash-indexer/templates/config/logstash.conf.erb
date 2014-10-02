@@ -51,7 +51,7 @@ filter {
 
 
 output {
-  stdout { codec => json }
+  # stdout { codec => json }
 
   elasticsearch_http {
     host => "<%= p("elasticsearch.host") %>"
@@ -59,6 +59,7 @@ output {
     idle_flush_time => 5
     workers => 3
   }
+  
   elasticsearch {
     host => "<%= p("elasticsearch.host") %>"
     index => "%{app_id}-%{+YYYY.MM.dd}"

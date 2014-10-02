@@ -27,6 +27,9 @@ properties:
   logstash.idle_flush_time:
     description: The amount of time since last flush before a flush is forced.
     default: 5
+  logstash.filter.workers:
+    description: The number of workers to use for filters
+    default: 1
   logstash.workers:
     description: The number of workers to use for this output.
     default: 3
