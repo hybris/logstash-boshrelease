@@ -10,4 +10,6 @@ builds:
     version: '4.0'
   433d7c72-38be-420e-8b5f-cfb767b070c6:
     version: '4.1'
+  197966d1-6acc-4ad0-a5cb-e508ec8cd252:
+    version: '4.2'
 format-version: '2'
