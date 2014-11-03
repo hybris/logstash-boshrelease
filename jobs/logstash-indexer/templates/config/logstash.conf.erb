@@ -52,13 +52,6 @@ filter {
 
 output {
 
-  elasticsearch_http {
-    host => "<%= p("elasticsearch.host") %>"
-    index => "%{app_id}-%{+YYYY.MM.dd}"
-    idle_flush_time => 5
-    workers => 3
-  }
-
   elasticsearch {
     host => "<%= p("elasticsearch.host") %>"
     index => "%{app_id}-%{+YYYY.MM.dd}"
