@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -e # exit immediately if a simple command exits with a non-zero status
+set -u # report the usage of uninitialized variables
+
+# Setup env vars and folders for the webapp_ctl script
+source /var/vcap/jobs/logstash-indexer/helpers/ctl_setup.sh 'logstash-indexer'
+
+export PORT=${PORT:-5000}
+export LANG=en_US.UTF-8
+export FILTER_WORKERS=${FILTER_WORKERS:-1}
+
+case $1 in
+
+  start)
+    pid_guard $PIDFILE $JOB_NAME
+
+    export PATH=/var/vcap/packages/java7/bin:$PATH
+    export JAVA_HOME=/var/vcap/packages/java7/
+
+    exec /var/vcap/jobs/logstash-indexer/packages/logstash/bin/logstash \
+        agent -w $FILTER_WORKERS -f /var/vcap/jobs/logstash-indexer/config/logstash.conf \
+        >>  $LOG_DIR/logstash-indexer.stdout.log \
+        2>> $LOG_DIR/logstash-indexer.stderr.log &
+
+    echo $! >> $PIDFILE
+
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+
+    ;;
+  *)
+    echo "Usage: indexer_ctl {start|stop}"
+
+    ;;
+
+esac
+exit 0
