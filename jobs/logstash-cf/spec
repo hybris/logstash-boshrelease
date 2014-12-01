@@ -33,6 +33,9 @@ properties:
   logstash.workers:
     description: The number of workers to use for this output.
     default: 3
+  logstash.index:
+    description: Index prefix where to store messages in ES.
+    default: cloudfoundry
   elasticsearch.cluster:
     description: Clustername
   elasticsearch.host:
