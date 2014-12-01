@@ -11,7 +11,7 @@ templates:
 
 
 packages:
-- java7
+- java
 - logstash
 
 properties:

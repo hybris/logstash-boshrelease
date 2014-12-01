@@ -15,8 +15,8 @@ case $1 in
   start)
     pid_guard $PIDFILE $JOB_NAME
 
-    export PATH=/var/vcap/packages/java7/bin:$PATH
-    export JAVA_HOME=/var/vcap/packages/java7/
+    export PATH=/var/vcap/packages/java/bin:$PATH
+    export JAVA_HOME=/var/vcap/packages/java/
 
     exec /var/vcap/jobs/logstash-indexer/packages/logstash/bin/logstash \
         agent -w $FILTER_WORKERS -f /var/vcap/jobs/logstash-indexer/config/logstash.conf \

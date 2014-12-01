@@ -7,11 +7,11 @@ templates:
    helpers/ctl_setup.sh: helpers/ctl_setup.sh
    helpers/ctl_utils.sh: helpers/ctl_utils.sh
    config/logstash.conf.erb: config/logstash.conf
-   
+
 
 
 packages:
-- java7
+- java
 - logstash
 
 properties:
