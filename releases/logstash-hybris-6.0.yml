@@ -1,0 +1,29 @@
+---
+packages:
+- name: java
+  version: 781d85b49608f57328d984f8456c7b735eee09f9
+  sha1: 09c0e642323e584ed65429700f15afc04cd03dba
+  fingerprint: 781d85b49608f57328d984f8456c7b735eee09f9
+  dependencies: []
+- name: logstash
+  version: 76a553a84c96df036d86a2fc74fad817abf7a751
+  sha1: abbad91be2b16b771ca9c6128076b86211b83035
+  fingerprint: 76a553a84c96df036d86a2fc74fad817abf7a751
+  dependencies: []
+jobs:
+- name: logstash-cf
+  version: 7ddf970faf6ddc811a655b4e9b4f038d6cfc43b1
+  fingerprint: 7ddf970faf6ddc811a655b4e9b4f038d6cfc43b1
+  sha1: 6232813916352cafb1051eead060755fe0b5201b
+- name: logstash-indexer
+  version: 357dec73b96018b4659bd5f81c1ce495e5034aec
+  fingerprint: 357dec73b96018b4659bd5f81c1ce495e5034aec
+  sha1: 1c7c75b657c4f1872b2f7e47a82e1e3f70f76f8e
+- name: logstash-syslog
+  version: 731b565fc5084c984bf24fa35045e4cec3de4871
+  fingerprint: 731b565fc5084c984bf24fa35045e4cec3de4871
+  sha1: 5f3a9123726cb099af0948e081b588aad2a15d45
+commit_hash: ad90b0fb
+uncommitted_changes: true
+name: logstash-hybris
+version: '6.0'
