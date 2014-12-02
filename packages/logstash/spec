@@ -1,7 +1,7 @@
 ---
 name: logstash
 
-dependencies:
+dependencies: []
 
 files:
-- logstash/logstash-*
+  - logstash/logstash-*
