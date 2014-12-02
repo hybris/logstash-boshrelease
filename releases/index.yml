@@ -12,4 +12,6 @@ builds:
     version: '4.1'
   197966d1-6acc-4ad0-a5cb-e508ec8cd252:
     version: '4.2'
+  f592f592-b537-4e62-85fb-ab7c43590e09:
+    version: '5.0'
 format-version: '2'
