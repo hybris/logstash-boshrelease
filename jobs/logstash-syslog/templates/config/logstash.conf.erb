@@ -2,10 +2,12 @@ input {
   tcp {
     port => <%= p('syslog.port') %>
     type => syslog
+    add_field => [ "type", "syslog" ]
   }
   udp {
     port => <%= p('syslog.port') %>
     type => syslog
+    add_field => [ "type", "syslog" ]
   }
 }
 

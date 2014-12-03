@@ -1,6 +1,5 @@
 input {
   redis {
-    type => "syslog"
     host => "<%= p("redis.host") %>"
     port => <%= p("redis.port") %>
 
@@ -12,7 +11,54 @@ input {
 
 
 filter {
-  if [@type] in ["syslog", "relp"] and [@source.host] == "loggregator" {
+  if [type] in ["syslog", "relp"] {
+    # syslog/relp
+
+    grok {
+      match => { "message" => "(?:%{INT:syslog6587_msglen} )?<%{POSINT:syslog_pri}>(?:%{NONNEGINT:syslog5424_ver} )?(?:%{SYSLOGTIMESTAMP:syslog_timestamp}|%{TIMESTAMP_ISO8601:syslog_timestamp}) %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?(:)? %{GREEDYDATA:syslog_message}" }
+      add_field => [ "received_at", "%{@timestamp}" ]
+      add_field => [ "received_from", "%{host}" ]
+      add_tag => [ "syslog_standard" ]
+      tag_on_failure => ["_grokparsefailure-syslog_standard"]
+    }
+
+    if !("_grokparsefailure-syslog_standard" in [tags]) {
+      syslog_pri { }
+
+      date {
+        match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss", "ISO8601" ]
+        timezone => "UTC"
+      }
+
+      # hostname: handle syslog configurations where hostname is localhost
+      if ([syslog_hostname] == "localhost" ) {
+        grok {
+          match => { "received_from" => "%{IPORHOST:syslog_hostname}(?::%{POSINT:syslog_port})?" }
+          overwrite => [ "syslog_hostname", "syslog_port" ]
+          tag_on_failure => [ "_grokparsefailure-syslog_standard-hostname"]
+        }
+      }
+
+      mutate {
+        replace => [ "source.host", "%{syslog_hostname}" ]
+      }
+
+      mutate {
+        convert => [ "syslog5424_ver", "integer" ]
+        convert => [ "syslog6587_msglen", "integer" ]
+        remove_field => [
+          #"syslog_pri",
+          "syslog_hostname",
+          "syslog_port",
+          "syslog_timestamp"
+        ]
+      }
+    }
+
+  }
+
+
+  if [type] in ["syslog", "relp"] and [source.host] == "loggregator" {
     # Parse Cloud Foundry logs from loggregator (syslog)
     # see https://github.com/cloudfoundry/loggregator/blob/master/src/loggregator/sinks/syslogwriter/syslog_writer.go#L156
 
@@ -44,7 +90,7 @@ filter {
         }
 
         mutate {
-          rename => [ "syslog_program", "@source.app_id" ]
+          rename => [ "syslog_program", "source.app_id" ]
         }
 
         mutate {
@@ -59,11 +105,11 @@ filter {
         }
       }
 
-    } else if [@type] in ["syslog", "relp"] and [syslog_program] =~ /vcap\..*/ {
+    } else if [type] in ["syslog", "relp"] and [syslog_program] =~ /vcap\..*/ {
       # Parse Cloud Foundry logs from syslog_aggregator
 
       grok {
-        match => { "syslog_message" => "(?:\[job=%{NOTSPACE:@job.name}|-) +(?:index=%{NOTSPACE:@job.index}\]|-) %{GREEDYDATA:_message_json}" }
+        match => { "syslog_message" => "(?:\[job=%{NOTSPACE:job.name}|-) +(?:index=%{NOTSPACE:job.index}\]|-) %{GREEDYDATA:_message_json}" }
         tag_on_failure => [
         "_grokparsefailure-cf-vcap"
         ]
@@ -82,11 +128,11 @@ filter {
         }
 
         mutate {
-          rename => [ "syslog_program", "@shipper.name" ]
-          replace => [ "@job.host", "%{@source.host}" ]
+          rename => [ "syslog_program", "shipper.name" ]
+          replace => [ "job.host", "%{source.host}" ]
           gsub => [
-          "@shipper.name", "\.", "_",
-          "@job.name", "\.", "_"
+          "shipper.name", "\.", "_",
+          "job.name", "\.", "_"
           ]
         }
 
@@ -103,9 +149,9 @@ filter {
 
         mutate {
           add_tag => "cloudfoundry_vcap"
-          replace => [ "@shipper.priority", "%{syslog_pri}" ]
-          replace => [ "@shipper.name", "%{@shipper.name}_%{@type}" ]
-          replace => [ "@type", "%{@type}_cf" ]
+          replace => [ "shipper.priority", "%{syslog_pri}" ]
+          replace => [ "shipper.name", "%{shipper.name}_%{type}" ]
+          replace => [ "type", "%{type}_cf" ]
         }
 
         mutate {
@@ -119,7 +165,8 @@ filter {
 
     }
 
-}
+  }
+
 
 
 output {
