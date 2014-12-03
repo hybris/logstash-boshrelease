@@ -16,4 +16,6 @@ builds:
     version: '5.0'
   af19a255-c61b-46b2-a163-14f425f515ba:
     version: '6.0'
+  9685df57-f4eb-4415-b070-218635b7130f:
+    version: '6.1'
 format-version: '2'
