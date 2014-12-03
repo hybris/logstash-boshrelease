@@ -1,5 +1,6 @@
 ---
 name: logstash-syslog
+
 templates:
    bin/syslog_ctl: bin/syslog_ctl
    bin/monit_debugger: bin/monit_debugger
@@ -8,11 +9,9 @@ templates:
    helpers/ctl_utils.sh: helpers/ctl_utils.sh
    config/logstash.conf.erb: config/logstash.conf
 
-
-
 packages:
-- java
-- logstash
+  - java
+  - logstash
 
 properties:
   redis.port:

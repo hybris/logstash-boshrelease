@@ -1,0 +1,1 @@
+# BOSH Release for logstash
