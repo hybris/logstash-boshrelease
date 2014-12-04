@@ -15,7 +15,7 @@ filter {
     # syslog/relp
 
     grok {
-      match => { "message" => "(?:%{INT:syslog6587_msglen} )?<%{POSINT:syslog_pri}>(?:%{NONNEGINT:syslog5424_ver} )?(?:%{SYSLOGTIMESTAMP:syslog_timestamp}|%{TIMESTAMP_ISO8601:syslog_timestamp}) %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?(:)? %{GREEDYDATA:syslog_message}" }
+      match => { "message" => "(?:%{INT:syslog6587_msglen} )?<%%{POSINT:syslog_pri}>(?:%{NONNEGINT:syslog5424_ver} )?(?:%{SYSLOGTIMESTAMP:syslog_timestamp}|%{TIMESTAMP_ISO8601:syslog_timestamp}) %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?(:)? %{GREEDYDATA:syslog_message}" }
       add_field => [ "received_at", "%{@timestamp}" ]
       add_field => [ "received_from", "%{host}" ]
       add_tag => [ "syslog_standard" ]
