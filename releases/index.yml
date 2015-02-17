@@ -20,4 +20,6 @@ builds:
     version: '6.1'
   0dc56300-5561-4347-8324-658d5cae6677:
     version: '6.2'
+  00086cd4-3d3e-42bf-9eab-089fb27ce507:
+    version: '6.3'
 format-version: '2'
