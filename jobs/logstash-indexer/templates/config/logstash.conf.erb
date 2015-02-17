@@ -10,21 +10,7 @@ input {
   }
 }
 
-
 filter {
-  if [type] == "syslog" and !([message] =~ /\[NXLOG/) {
-    grok {
-      match => { "message" => "\d <\d*>\d* %{TIMESTAMP_ISO8601:syslog_timestamp} %{USER:syslog_user} %{DATA:app_id} \[%{DATA:cf_component}\] - - %{GREEDYDATA:message}" }
-      add_field => {
-        "received_at" => "%{@timestamp}"
-      }
-      overwrite => [ "message" ]
-    }
-    date {
-      match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" , "ISO8601"]
-    }
-  }
-
   ###################################
   #              NXLOG              #
   ###################################
@@ -47,11 +33,77 @@ filter {
       mutate { remove_field => "nxlog" }
     }
   }
+
+  ###################################
+  #          CLOUDFOUNDRY           #
+  ###################################
+  else if [type] == "syslog" and [message] =~ /loggregator/ and [message] =~ /\[(RTR|API|STG|DEA|LGR|App\/[0-9]+)\]/ {
+    grok {
+      match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog5424_ver} +(?:%{TIMESTAMP_ISO8601:syslog5424_ts}|-) +(?:%{HOSTNAME:syslog5424_host}|-) +(?:%{NOTSPACE:syslog5424_app}|-) +(?:%{NOTSPACE:syslog5424_proc}|-) +(?:%{WORD:syslog5424_msgid}|-) +(?:%{SYSLOG5424SD:syslog5424_sd}|-|) +%{GREEDYDATA:syslog5424_msg}" }
+      add_tag => [ "cloudfoundry" ]
+    }
+
+    if !("_grokparsefailure" in [tags]) {
+      syslog_pri { }
+
+      date {
+        match => [ "syslog5424_ts", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss", "ISO8601" ]
+      }
+
+      mutate {
+        add_field => [ "received_at", "%{syslog5424_ts}" ]
+        add_field => [ "received_from", "%{host}" ]
+        add_field => [ "app_id", "%{syslog5424_app}" ]
+        add_field => [ "cf_component", "%{syslog5424_proc}" ]
+        replace => [ "@source_host", "%{syslog5424_host}" ]
+        replace => [ "message", "%{syslog5424_msg}" ]
+      }
+    }
+
+    # ROUTER EVENTS
+    if [cf_component] == "[RTR]" {
+      kv {
+        source => "syslog5424_msg"
+        include_keys => [ "x_forwarded_for", "vcap_request_id", "response_time" ]
+        value_split => ":"
+      }
+
+      grok {
+        match => { "message" => "%{IPORHOST:app_name} - \[%{MONTHDAY}/%{MONTHNUM}/%{YEAR}:%{TIME} %{INT}\] \"(?:%{WORD:verb} %{NOTSPACE:request}(?: HTTP/%{NUMBER:httpversion})?|%{DATA:rawrequest})\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{QS:referrer} %{QS:agent}" }
+      }
+      #if !("_grokparsefailure" in [tags]) { }
+    }
+
+    # OTHER EVENTS
+    # if [cf_component] =~ "\[(API|STG|DEA|LGR|App\/[0-9]+)\]" { ??? }
+
+    mutate {
+      remove_field => [
+        "syslog5424_pri",
+        "syslog5424_ver",
+        "syslog5424_ts",
+        "syslog5424_host",
+        "syslog5424_app",
+        "syslog5424_proc",
+        "syslog5424_msg",
+        "syslog_severity_code",
+        "syslog_facility_code"
+      ]
+    }
+  }
+
+
+  ###################################
+  #              OTHER              #
+  ###################################
+  else {
+    mutate {
+      add_tag => [ "unknown_logs" ]
+    }
+  }
 }
 
-
 output {
-
   elasticsearch {
     host => "<%= p("elasticsearch.host") %>"
     index => "%{app_id}-%{+YYYY.MM.dd}"
