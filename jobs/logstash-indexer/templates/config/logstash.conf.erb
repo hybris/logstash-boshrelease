@@ -78,6 +78,9 @@ filter {
     # if [cf_component] =~ "\[(API|STG|DEA|LGR|App\/[0-9]+)\]" { ??? }
 
     mutate {
+      convert => [ "bytes", "integer" ]
+      convert => [ "response", "integer" ]
+      convert => [ "response_time", "float" ]
       remove_field => [
         "syslog5424_pri",
         "syslog5424_ver",
