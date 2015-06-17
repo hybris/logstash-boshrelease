@@ -24,4 +24,6 @@ builds:
     version: '6.3'
   7c6794aa-aa46-49a7-a5db-9095a0f4c55f:
     version: '6.4'
+  2638c32b-5338-4708-a0bf-46c985c164c0:
+    version: '6.5'
 format-version: '2'
