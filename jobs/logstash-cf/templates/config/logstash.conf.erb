@@ -122,9 +122,15 @@ filter {
           target => "msgdata"
         }
 
-        json {
-          source => "_message_json"
-          remove_field => "_message_json"
+        if [_message_json] =~ /^\s*{".*}\s*$/ {
+          json {
+            source => "_message_json"
+            remove_field => "_message_json"
+          }
+        } else {
+          mutate {
+            rename => [ "_message_json", "message" ]
+          }
         }
 
         mutate {
