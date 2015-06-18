@@ -37,3 +37,6 @@ properties:
   elasticsearch.host:
     description: Host where elasticsearch is installed
     default: 127.0.0.1
+  elasticsearch.protocol:
+    description: protocol used by elasticsearch output when connnecting to ES cluste
+    default: transport
