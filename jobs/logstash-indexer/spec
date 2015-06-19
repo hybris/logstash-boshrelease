@@ -14,26 +14,37 @@ packages:
   - logstash
 
 properties:
-  redis.port:
-    description: Port to listen for requests to redis server
-    default: 6379
-  redis.host:
-    description: Host where redis is installed
-    default: localhost
-  logstash.redis.key:
-    description: Key in redis
-    default: logstash
-  logstash.idle_flush_time:
-    description: The amount of time since last flush before a flush is forced.
-    default: 5
+  logstash.heap_size:
+    description: "Logstash heap size"
+    default: "1024m"
   logstash.filter.workers:
-    description: The number of workers to use for filters
+    description: "The number of workers to use for filters"
     default: 1
-  logstash.workers:
-    description: The number of workers to use for this output.
+
+  logstash.redis.host:
+    description: "Host where redis is installed"
+    default: "localhost"
+  logstash.redis.port:
+    description: "Port to listen for requests to redis server"
+    default: 6379
+  logstash.redis.key:
+    description: "Logstash key for redis"
+    default: "logstash"
+  logstash.redis.batch_count:
+    description: "The number of events to return from Redis using EVAL"
+    default: 1
+  logstash.redis.threads:
+    description: "Set this to the number of threads you want this input to spawn"
+    default: 1
+
+  logstash.elasticsearch.cluster:
+    description: "Elasticsearch cluster name"
+  logstash.elasticsearch.host:
+    description: "Host where elasticsearch is installed"
+    default: "127.0.0.1"
+  logstash.elasticsearch.idle_flush_time:
+    description: "The amount of time since last flush before a flush is forced to elasticsearch"
+    default: 5
+  logstash.elasticsearch.workers:
+    description: "The number of workers to use for elasticsearch output"
     default: 3
-  elasticsearch.cluster:
-    description: Clustername
-  elasticsearch.host:
-    description: Host where elasticsearch is installed
-    default: 127.0.0.1

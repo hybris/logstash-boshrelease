@@ -1,118 +1,261 @@
 input {
   redis {
-    type => "syslog"
-    host => "<%= p("redis.host") %>"
-    port => <%= p("redis.port") %>
-
-    # these settings should match the output of the agent
-    data_type => "list"
-    key => "<%= p('logstash.redis.key') %>"
+    host        => "<%= p("logstash.redis.host") %>"
+    port        => <%= p("logstash.redis.port") %>
+    batch_count => <%= p('logstash.redis.batch_count') %>
+    threads     => <%= p('logstash.redis.threads') %>
+    key         => "<%= p('logstash.redis.key') %>"
+    data_type   => "list"
   }
 }
 
+
 filter {
   ###################################
-  #              NXLOG              #
+  #              COMMON             #
   ###################################
-  if [type] == "syslog" and [message] =~ /\[NXLOG/ {
+  if [type] in ["syslog", "relp"] {
+
     grok {
-        match => [ "message", ".*\[NXLOG@14506 (?<nxlog[params]>[^\]]+)\] %{GREEDYDATA:message}" ]
-        add_tag => [ "nxlog", "bosh", "services" ]
-        add_field => { "app_id" => "nxlog" }
-        overwrite => [ "message" ]
-        tag_on_failure => [ "_grokparsefailure-nxlog" ]
+      match           => { "message" => "(?:%{INT:syslog6587_msglen} )?<%%{POSINT:syslog_pri}>(?:%{NONNEGINT:syslog5424_ver} )?(?:%{SYSLOGTIMESTAMP:syslog_timestamp}|%{TIMESTAMP_ISO8601:syslog_timestamp}) %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?(:)? %{GREEDYDATA:syslog_message}" }
+      add_field       => [ "received_at", "%{@timestamp}" ]
+      add_field       => [ "received_from", "%{host}" ]
+      tag_on_failure  => ["_grokparsefailure-syslog_standard"]
     }
 
-    if "_grokparsefailure-nxlog" not in [tags] {
-      kv { source => "nxlog[params]" }
+    if !("_grokparsefailure-syslog_standard" in [tags]) {
+      syslog_pri { }
 
-      if [bosh_deployment] {
-        mutate { update => { "app_id" => "%{bosh_deployment}" } }
+      date {
+        match     => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss", "ISO8601" ]
+        timezone  => "UTC"
       }
 
-      mutate { remove_field => "nxlog" }
+      # hostname: handle syslog configurations where hostname is localhost
+      if ([syslog_hostname] == "localhost" ) {
+        grok {
+          match           => { "received_from" => "%{IPORHOST:syslog_hostname}(?::%{POSINT:syslog_port})?" }
+          overwrite       => [ "syslog_hostname", "syslog_port" ]
+          tag_on_failure  => [ "_grokparsefailure-syslog_standard-hostname"]
+        }
+      }
+
+      mutate { replace => [ "source.host", "%{syslog_hostname}" ] }
+      mutate { convert => [ "syslog5424_ver", "integer" ] }
+      mutate { convert => [ "syslog6587_msglen", "integer" ] }
+
+      if [syslog5424_ver] == 1 {
+        grok {
+          # I don't think this is rfc5424-legal because it says SD *must* exist and message *may* exist.
+          # However, this makes parsing compatible with common syslog implementations.
+          match           => [ "syslog_message", "(?:%{DATA:syslog_procid}|\-) (?:%{DATA:syslog_msgid}|\-)(?: %{SYSLOG5424SD:syslog_sd}| \-)? %{GREEDYDATA:syslog_message}" ]
+          overwrite       => [ "syslog_message" ]
+          tag_on_failure  => [ "_grokparsefailure-syslog_standard-5424" ]
+        }
+
+        # structured-data
+        if [syslog_sd] {
+          grok {
+            match           => [ "syslog_sd", "\[%{DATA:syslog_sd_id} (?<syslog_sd_params_raw]>[^\]]+)\]" ]
+            tag_on_failure  => [ "_grokparsefailure-syslog_standard-5424/sds" ]
+          }
+
+          if !("_grokparsefailure-syslog_standard-5424/sd" in [tags]) {
+            # convert the the key-value pairs
+            kv {
+              source        => "syslog_sd_params_raw"
+              target        => "syslog_sd_params"
+            }
+
+            if [syslog_sd_params][type] {
+              # establish a convention that a structured data key of "type" will be the log type
+              mutate { replace => { "type" => "%{syslog_sd_params[type]}" } }
+            }
+          }
+        }
+      }
+    }
+
+    if "NXLOG@14506" == [syslog_sd_id] {
+      # We're going to treat syslog as a transparent transport and pretend it was never even
+      # utilized. This means we'll drop the syslog metadata, but it really shouldn't matter.
+
+      # This is a workaround to an apparent bug where logstash treats a non-existant field
+      # as an array which causes a "Not possible to merge an array and a hash" error. Here
+      # we force the probably non-existant field to a hash with a temp field so we can use
+      # the mutate's merge option.
+      mutate { add_field => [ "source[_forcemeahash]", "workaround" ] }
+
+      mutate { merge => [ "source", "syslog_sd_params" ] }
+      mutate { rename => [ "syslog_message", "message" ] }
+      mutate { remove_field => [ "source[_forcemeahash]" ] }
+
+      mutate {
+        # syslog host is actually the shipper
+        rename => [ "source.host", "shipper[host]" ]
+
+        # these are parsed with kv, but they're static nxlog shipper properties
+        rename => [ "source[EventReceivedTime]", "shipper[event_received_time]" ]
+        rename => [ "source[SourceModuleName]", "shipper[module_name]" ]
+        rename => [ "source[SourceModuleType]", "shipper[module_type]" ]
+      }
+
+      if ![app_id] {
+        mutate { add_field => { "app_id" => "nxlog" } }
+      }
+
+      if [source][bosh_deployment] {
+        mutate { update => { "app_id" => "%{[source][bosh_deployment]}" } }
+      }
+
+      if ![type] {
+        mutate { add_field => { "type" => "syslog" } }
+      }
+
+      mutate { replace => [ "type", "%{type}_nxlog" ] }
+
+      mutate { add_field => { "[@metadata][processed]" => true } }
+
     }
   }
+
 
   ###################################
   #          CLOUDFOUNDRY           #
   ###################################
-  else if [type] == "syslog" and [message] =~ /loggregator/ and [message] =~ /\[(RTR|API|STG|DEA|LGR|App\/[0-9]+)\]/ {
+  if [source.host] == "loggregator" {
     grok {
-      match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog5424_ver} +(?:%{TIMESTAMP_ISO8601:syslog5424_ts}|-) +(?:%{HOSTNAME:syslog5424_host}|-) +(?:%{NOTSPACE:syslog5424_app}|-) +(?:%{NOTSPACE:syslog5424_proc}|-) +(?:%{WORD:syslog5424_msgid}|-) +(?:%{SYSLOG5424SD:syslog5424_sd}|-|) +%{GREEDYDATA:syslog5424_msg}" }
-      add_tag => [ "cloudfoundry" ]
+      match           => { "syslog_procid" => "\[(?<log_source>[^/\]]+)(?:/(?<log_source_id>[^\]]+))?\]" }
+      tag_on_failure  => [ "fail/logsearch-for-cloudfoundry/loggregator/_grokparsefailure" ]
     }
 
-    if !("_grokparsefailure" in [tags]) {
-      syslog_pri { }
+    if !("fail/logsearch-for-cloudfoundry/loggregator/_grokparsefailure" in [tags]) {
+      #If it looks like JSON, it must be JSON...
+      if [syslog_message] =~ /^\s*{".*}\s*$/ {
+        json { source => "syslog_message" }
 
-      date {
-        match => [ "syslog5424_ts", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss", "ISO8601" ]
+        # todo seems like some messages have @timestamp in them? seems ci-specific
+        date { match => [ "@timestamp", "ISO8601" ] }
+
+      } else {
+        mutate { add_field => [ "message", "%{syslog_message}" ] }
+
+        if [message] == "-" {
+          mutate { remove_field => "message" }
+        }
+      }
+
+      mutate { rename => [ "syslog_program", "app_id" ] }
+
+      if ![type] {
+        mutate { add_field => { "type" => "syslog" } }
+      }
+
+      mutate { replace => [ "type", "%{type}_cf" ] }
+
+      if ![app_id] {
+        mutate { add_field => { "app_id" => "cloudfoundry" } }
+      }
+
+      mutate { add_field => { "[@metadata][processed]" => true } }
+    }
+
+
+  } else if [syslog_program] =~ /vcap\..*/ {
+    grok {
+      match           => { "syslog_message" => "(?:\[job=%{NOTSPACE:job.name}|-) +(?:index=%{NOTSPACE:job.index}\]|-) %{GREEDYDATA:_message_json}" }
+      tag_on_failure  => [ "_grokparsefailure-cf-vcap" ]
+    }
+
+    if !("_grokparsefailure-cf-vcap" in [tags]) {
+      kv {
+        source      => "msgdata"
+        field_split => " "
+        target      => "msgdata"
+      }
+
+      json {
+        source        => "_message_json"
+        remove_field  => "_message_json"
       }
 
       mutate {
-        add_field => [ "received_at", "%{syslog5424_ts}" ]
-        add_field => [ "received_from", "%{host}" ]
-        add_field => [ "app_id", "%{syslog5424_app}" ]
-        add_field => [ "cf_component", "%{syslog5424_proc}" ]
-        replace => [ "@source_host", "%{syslog5424_host}" ]
-        replace => [ "message", "%{syslog5424_msg}" ]
-      }
-    }
-
-    # ROUTER EVENTS
-    if [cf_component] == "[RTR]" {
-      kv {
-        source => "syslog5424_msg"
-        include_keys => [ "x_forwarded_for", "vcap_request_id", "response_time" ]
-        value_split => ":"
+        rename  => [ "syslog_program", "shipper.name" ]
+        replace => [ "job.host", "%{source.host}" ]
+        gsub    => [
+          "shipper.name", "\.", "_",
+          "job.name", "\.", "_"
+        ]
       }
 
-      grok {
-        match => { "message" => "%{IPORHOST:app_name} - \[%{MONTHDAY}/%{MONTHNUM}/%{YEAR}:%{TIME} %{INT}\] \"(?:%{WORD:verb} %{NOTSPACE:request}(?: HTTP/%{NUMBER:httpversion})?|%{DATA:rawrequest})\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{QS:referrer} %{QS:agent}" }
+      if [source] == "NatsStreamForwarder" {
+        json {
+          source => "[data][nats_message]"
+          target => "nats_message"
+        }
       }
-      #if !("_grokparsefailure" in [tags]) { }
-    }
 
-    # OTHER EVENTS
-    # if [cf_component] =~ "\[(API|STG|DEA|LGR|App\/[0-9]+)\]" { ??? }
+      if ![type] {
+        mutate { add_field => { "type" => "syslog" } }
+      }
 
-    mutate {
-      convert => [ "bytes", "integer" ]
-      convert => [ "response", "integer" ]
-      convert => [ "response_time", "float" ]
-      remove_field => [
-        "syslog5424_pri",
-        "syslog5424_ver",
-        "syslog5424_ts",
-        "syslog5424_host",
-        "syslog5424_app",
-        "syslog5424_proc",
-        "syslog5424_msg",
-        "syslog_severity_code",
-        "syslog_facility_code"
-      ]
+      mutate {
+        replace => [ "shipper.priority", "%{syslog_pri}" ]
+        replace => [ "shipper.name", "%{shipper.name}_%{type}" ]
+        replace => [ "type", "%{type}_cf" ]
+      }
+
+      if ![app_id] {
+        mutate { add_field => { "app_id" => "cloudfoundry" } }
+      }
+
+      mutate { add_field => { "[@metadata][processed]" => true } }
     }
   }
 
+  mutate {
+    remove_field => "[data]"
+    remove_field => "[nats_message][app_id_to_count]"
 
-  ###################################
-  #              OTHER              #
-  ###################################
-  else {
-    mutate {
-      add_tag => [ "unknown_logs" ]
-    }
+    remove_field => "syslog_sd"
+    remove_field => "syslog_sd_id"
+    remove_field => "syslog_sd_params"
+    remove_field => "syslog_sd_params_raw"
+    remove_field => "syslog_program"
+    remove_field => "syslog_pri"
+    remove_field => "syslog_hostname"
+    remove_field => "syslog_port"
+    remove_field => "syslog_timestamp"
+    remove_field => "syslog_facility"
+    remove_field => "syslog_facility_code"
+    remove_field => "syslog_message"
+    remove_field => "syslog_severity"
+    remove_field => "syslog_severity_code"
+    remove_field => "syslog5424_ver"
+    remove_field => "syslog6587_msglen"
+    remove_field => "syslog_procid"
+    remove_field => "syslog_msgid"
+  }
+
+  # drop if not processed by our filters
+  if ![@metadata][processed] {
+    drop { }
   }
 }
 
+
 output {
-  elasticsearch {
-    host => "<%= p("elasticsearch.host") %>"
-    index => "%{app_id}-%{+YYYY.MM.dd}"
-    protocol => "transport"
-    idle_flush_time => <%= p("logstash.idle_flush_time") %>
-    workers => <%= p("logstash.workers") %>
-    cluster => "<%= p("elasticsearch.cluster") %>"
+  if ![app_id] or ![@metadata][processed] {
+      stdout { codec => rubydebug { metadata => true } }
+
+  } else {
+    elasticsearch {
+      host            => "<%= p("logstash.elasticsearch.host") %>"
+      cluster         => "<%= p("logstash.elasticsearch.cluster") %>"
+      idle_flush_time => <%= p("logstash.elasticsearch.idle_flush_time") %>
+      workers         => <%= p("logstash.elasticsearch.workers") %>
+      protocol        => "transport"
+      index           => "%{app_id}-%{+YYYY.MM.dd}"
+    }
   }
 }
