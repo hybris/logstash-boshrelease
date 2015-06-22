@@ -76,6 +76,9 @@ filter {
       }
     }
 
+    ###################################
+    #          NXLOG/BACKING          #
+    ###################################
     if "NXLOG@14506" == [syslog_sd_id] {
       # We're going to treat syslog as a transparent transport and pretend it was never even
       # utilized. This means we'll drop the syslog metadata, but it really shouldn't matter.
@@ -100,21 +103,12 @@ filter {
         rename => [ "source[SourceModuleType]", "shipper[module_type]" ]
       }
 
-      if ![app_id] {
-        mutate { add_field => { "app_id" => "nxlog" } }
-      }
-
-      if [source][bosh_deployment] {
-        mutate { update => { "app_id" => "%{[source][bosh_deployment]}" } }
-      }
-
-      if ![type] {
-        mutate { add_field => { "type" => "syslog" } }
-      }
-
+      mutate { add_field => { "type" => "syslog" } }
       mutate { replace => [ "type", "%{type}_nxlog" ] }
 
-      mutate { add_field => { "[@metadata][processed]" => true } }
+      if [source][bosh_deployment] {
+        mutate { add_field => { "[@metadata][index_name]" => "%{[source][bosh_deployment]}" } }
+      }
 
     }
   }
@@ -147,17 +141,10 @@ filter {
 
       mutate { rename => [ "syslog_program", "app_id" ] }
 
-      if ![type] {
-        mutate { add_field => { "type" => "syslog" } }
-      }
-
+      mutate { add_field => { "type" => "syslog" } }
       mutate { replace => [ "type", "%{type}_cf" ] }
 
-      if ![app_id] {
-        mutate { add_field => { "app_id" => "cloudfoundry" } }
-      }
-
-      mutate { add_field => { "[@metadata][processed]" => true } }
+      mutate { add_field => { "[@metadata][index_name]" => "cloudfoundry" } }
     }
 
 
@@ -174,10 +161,15 @@ filter {
         target      => "msgdata"
       }
 
-      json {
-        source        => "_message_json"
-        remove_field  => "_message_json"
+      if [_message_json] =~ /^\s*{".*}\s*$/ {
+        json {
+          source        => "_message_json"
+          remove_field  => "_message_json"
+        }
+      } else {
+        mutate { rename => [ "_message_json", "message" ] }
       }
+
 
       mutate {
         rename  => [ "syslog_program", "shipper.name" ]
@@ -195,21 +187,15 @@ filter {
         }
       }
 
-      if ![type] {
-        mutate { add_field => { "type" => "syslog" } }
-      }
-
       mutate {
         replace => [ "shipper.priority", "%{syslog_pri}" ]
         replace => [ "shipper.name", "%{shipper.name}_%{type}" ]
-        replace => [ "type", "%{type}_cf" ]
       }
 
-      if ![app_id] {
-        mutate { add_field => { "app_id" => "cloudfoundry" } }
-      }
+      mutate { add_field => { "type" => "syslog" } }
+      mutate { replace => [ "type", "%{type}_cf" ] }
 
-      mutate { add_field => { "[@metadata][processed]" => true } }
+      mutate { add_field => { "[@metadata][index_name]" => "cloudfoundry" } }
     }
   }
 
@@ -238,24 +224,23 @@ filter {
   }
 
   # drop if not processed by our filters
-  if ![@metadata][processed] {
+  if ![@metadata][index_name] {
     drop { }
   }
 }
 
 
 output {
-  if ![app_id] or ![@metadata][processed] {
-      stdout { codec => rubydebug { metadata => true } }
-
-  } else {
+  # stdout { codec => rubydebug { metadata => true } }
+  if [@metadata][index_name] {
     elasticsearch {
       host            => "<%= p("logstash.elasticsearch.host") %>"
       cluster         => "<%= p("logstash.elasticsearch.cluster") %>"
       idle_flush_time => <%= p("logstash.elasticsearch.idle_flush_time") %>
       workers         => <%= p("logstash.elasticsearch.workers") %>
       protocol        => "transport"
-      index           => "%{app_id}-%{+YYYY.MM.dd}"
+      index           => "%{[@metadata][index_name]}-%{+YYYY.MM.dd}"
+      manage_template => false
     }
   }
 }
