@@ -7,3 +7,11 @@ java/openjdk-jre-trusty-1.8.0_25.tar.gz:
   object_id: 542be921-0c75-4682-8cc0-a3f49e866af2
   sha: 33252952b6514d7fca61b61a2d7d1f812e741a03
   size: 39158212
+java/openjdk-jre-trusty-1.8.0_45.tar.gz:
+  object_id: 09e60d97-24aa-4df8-a0f7-99bc5f5f6b98
+  sha: 6517390047b05bdb8dd02b3895378112207abda7
+  size: 44988428
+logstash/logstash-1.5.1.tar.gz:
+  object_id: acc927b5-39b7-416d-9a15-4d998bf5a599
+  sha: 526bf554d1f1e27354f3816c1a3576a83ac1ca05
+  size: 90347364
