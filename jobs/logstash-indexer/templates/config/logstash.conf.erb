@@ -103,7 +103,6 @@ filter {
         rename => [ "source[SourceModuleType]", "shipper[module_type]" ]
       }
 
-      mutate { add_field => { "type" => "syslog" } }
       mutate { replace => [ "type", "%{type}_nxlog" ] }
 
       if [source][bosh_deployment] {
@@ -141,7 +140,6 @@ filter {
 
       mutate { rename => [ "syslog_program", "app_id" ] }
 
-      mutate { add_field => { "type" => "syslog" } }
       mutate { replace => [ "type", "%{type}_cf" ] }
 
       mutate { add_field => { "[@metadata][index_name]" => "cloudfoundry" } }
@@ -181,9 +179,18 @@ filter {
       }
 
       if [source] == "NatsStreamForwarder" {
-        json {
-          source => "[data][nats_message]"
-          target => "nats_message"
+        if [data][nats_message] =~ /^\s*{".*}\s*$/ {
+          json {
+            source => "[data][nats_message]"
+            target => "nats_message"
+          }
+
+          if [nats_message][start] {
+            date {
+              match => [ "[nats_message][start]", "yyyy-MM-dd HH:mm:ss Z", "ISO8601" ]
+              target => "[nats_message][start]"
+            }
+          }
         }
       }
 
@@ -192,7 +199,6 @@ filter {
         replace => [ "shipper.name", "%{shipper.name}_%{type}" ]
       }
 
-      mutate { add_field => { "type" => "syslog" } }
       mutate { replace => [ "type", "%{type}_cf" ] }
 
       mutate { add_field => { "[@metadata][index_name]" => "cloudfoundry" } }
