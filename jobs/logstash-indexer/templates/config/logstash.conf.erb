@@ -229,6 +229,22 @@ filter {
     remove_field => "syslog_msgid"
   }
 
+  # remove fields with empty values
+  ruby {
+    code => "
+      def cleanup(hsh)
+        hsh.keep_if do |k, v|
+          if v.is_a?(Hash)
+            cleanup(v)
+          else
+            v != ''
+          end
+        end
+      end
+      cleanup(event.to_hash);
+    "
+  }
+
   # drop if not processed by our filters
   if ![@metadata][index_name] {
     drop { }
