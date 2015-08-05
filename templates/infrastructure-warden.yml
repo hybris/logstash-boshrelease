@@ -1,0 +1,100 @@
+meta:
+  environment: logstash-warden
+
+  stemcell:
+    name: bosh-warden-boshlite-ubuntu
+    version: latest
+
+update:
+  canaries: 1
+  max_in_flight: 50
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
+
+jobs:
+  - name: logstash-syslog
+    networks:
+      - name: logstash1
+
+  - name: logstash-indexer
+    networks:
+      - name: logstash1
+
+compilation:
+  cloud_properties:
+    name: random
+
+resource_pools:
+  - name: small_z1
+    cloud_properties:
+      name: random
+
+networks:
+- name: logstash1
+  # Assumes up to 5 VMs, including 1 static and 4 dynamic.
+  # Plus 5 (double the size) unused IPs, due to BOSH bug/quirk.
+  subnets:
+  - cloud_properties:
+      name: random
+    range: 10.244.10.0/30
+    reserved:
+    - 10.244.10.1
+    static:
+    - 10.244.10.2
+
+  - cloud_properties:
+      name: random
+    range: 10.244.10.4/30
+    reserved:
+    - 10.244.10.5
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.8/30
+    reserved:
+    - 10.244.10.9
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.12/30
+    reserved:
+    - 10.244.10.13
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.16/30
+    reserved:
+    - 10.244.10.17
+    static: []
+
+  # Bonus double-sized network required due to BOSH oddity
+  - cloud_properties:
+      name: random
+    range: 10.244.10.20/30
+    reserved:
+    - 10.244.10.21
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.24/30
+    reserved:
+    - 10.244.10.25
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.28/30
+    reserved:
+    - 10.244.10.29
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.32/30
+    reserved:
+    - 10.244.10.33
+    static: []
+  - cloud_properties:
+      name: random
+    range: 10.244.10.36/30
+    reserved:
+    - 10.244.10.37
+    static: []

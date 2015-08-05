@@ -23,7 +23,6 @@ properties:
 
   logstash.redis.host:
     description: "Host where redis is installed"
-    default: "localhost"
   logstash.redis.port:
     description: "Port to listen for requests to redis server"
     default: 6379

@@ -1,4 +1,5 @@
 input {
+<% if p("logstash.redis.host", nil) %>
   redis {
     host        => "<%= p("logstash.redis.host") %>"
     port        => <%= p("logstash.redis.port") %>
@@ -7,6 +8,9 @@ input {
     key         => "<%= p('logstash.redis.key') %>"
     data_type   => "list"
   }
+<% else %>
+  stdin { }
+<% end %>
 }
 
 
@@ -253,7 +257,7 @@ filter {
 
 
 output {
-  # stdout { codec => rubydebug { metadata => true } }
+<% if p("logstash.elasticsearch.host", nil) %>
   if [@metadata][index_name] {
     elasticsearch {
       host            => "<%= p("logstash.elasticsearch.host") %>"
@@ -265,4 +269,7 @@ output {
       manage_template => false
     }
   }
+<% else %>
+  stdout { codec => rubydebug { metadata => true } }
+<% end %>
 }

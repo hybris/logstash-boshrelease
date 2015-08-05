@@ -17,13 +17,9 @@ properties:
   logstash.heap_size:
     description: "Logstash heap size"
     default: "1024m"
-  logstash.filter.workers:
-    description: "The number of workers to use for filters"
-    default: 1
 
   logstash.redis.host:
     description: "Host where redis is installed"
-    default: "localhost"
   logstash.redis.port:
     description: "Port to listen for requests to redis server"
     default: 6379
@@ -41,7 +37,6 @@ properties:
     description: "Elasticsearch cluster name"
   logstash.elasticsearch.host:
     description: "Host where elasticsearch is installed"
-    default: "127.0.0.1"
   logstash.elasticsearch.idle_flush_time:
     description: "The amount of time since last flush before a flush is forced to elasticsearch"
     default: 5

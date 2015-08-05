@@ -15,7 +15,6 @@ case $1 in
     pid_guard $PIDFILE $JOB_NAME
 
     exec chpst -u $RUNAS:$RUNAS /var/vcap/jobs/logstash-indexer/packages/logstash/bin/logstash agent \
-        -w $FILTER_WORKERS \
         -f /var/vcap/jobs/logstash-indexer/config/logstash.conf \
         1>> $LOG_DIR/logstash-indexer.stdout.log \
         2>> $LOG_DIR/logstash-indexer.stderr.log &

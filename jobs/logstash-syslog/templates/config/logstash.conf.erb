@@ -41,6 +41,7 @@ filter {
 
 
 output {
+<% if p("logstash.redis.host", nil) %>
   redis {
     host          => "<%= p("logstash.redis.host") %>"
     port          => <%= p("logstash.redis.port") %>
@@ -50,4 +51,7 @@ output {
     key           => "<%= p('logstash.redis.key') %>"
     data_type     => "list"
   }
+<% else %>
+  stdout { codec => rubydebug { metadata => true } }
+<% end %>
 }
