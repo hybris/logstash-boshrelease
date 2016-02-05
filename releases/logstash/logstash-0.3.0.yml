@@ -1,0 +1,44 @@
+---
+packages:
+- name: logstash
+  version: !binary |-
+    NDdjMzdiYjNmYzdhMzk5MmFkY2RiZjNjMjg0MTFkZDAzZGM1NDc0NA==
+  fingerprint: !binary |-
+    NDdjMzdiYjNmYzdhMzk5MmFkY2RiZjNjMjg0MTFkZDAzZGM1NDc0NA==
+  sha1: !binary |-
+    YjI2MDQyM2NhZmM2YjYxZmJiZGViZWFhODM4MmY5YTFmMTViYWI5Yg==
+  dependencies: []
+- name: java
+  version: !binary |-
+    MWRhYjI5NjE0YWJhNWRjZWMyYmMwM2MxZGQ3YzA2YWQyZTgwMzIxMg==
+  fingerprint: !binary |-
+    MWRhYjI5NjE0YWJhNWRjZWMyYmMwM2MxZGQ3YzA2YWQyZTgwMzIxMg==
+  sha1: !binary |-
+    NzhlZDZkMzIyMjhkZTM1MzM3MzMzMjBkYzFhNGNkMTZlNmNjYjUwZg==
+  dependencies: []
+jobs:
+- name: logstash-indexer
+  version: !binary |-
+    ZmM0OGI3M2RkZTAyZTM4ZjUyZjdmNmIzODU2MGE1ZjYxNTI5NWYzYQ==
+  fingerprint: !binary |-
+    ZmM0OGI3M2RkZTAyZTM4ZjUyZjdmNmIzODU2MGE1ZjYxNTI5NWYzYQ==
+  sha1: !binary |-
+    MjMwOTc5MGY1NWVlMmE4NjY3ZGI5NmYzYjFiNzgyZjRkODgyMDc5OQ==
+- name: logstash-syslog
+  version: !binary |-
+    MmUxMzI3ODg3ODM1Mzk2ZmFhOTY2NTg2ZWY5OGFmYWJiNGI1NzcwZg==
+  fingerprint: !binary |-
+    MmUxMzI3ODg3ODM1Mzk2ZmFhOTY2NTg2ZWY5OGFmYWJiNGI1NzcwZg==
+  sha1: !binary |-
+    NDliZmJlN2Y0ZTEzYzExMmJkZWU3MjQ1NDY4ZjBkYmE2OTliZmNiOQ==
+license:
+  version: !binary |-
+    NTY5YTQ4MTY2M2Y5NWIxMGNiODAzNTM5YmE2MWE4YzI0YTg4MTQ2Mw==
+  fingerprint: !binary |-
+    NTY5YTQ4MTY2M2Y5NWIxMGNiODAzNTM5YmE2MWE4YzI0YTg4MTQ2Mw==
+  sha1: !binary |-
+    N2M3OTAyNjBiODM2MmU4Zjg5NmEyMmE3ZjVkZTE2Y2VhZDIwZWNkMw==
+commit_hash: 6fd28d63
+uncommitted_changes: true
+name: logstash
+version: 0.3.0
