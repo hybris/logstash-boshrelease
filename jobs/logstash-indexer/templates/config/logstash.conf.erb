@@ -249,6 +249,12 @@ filter {
     "
   }
 
+  ruby {
+      code => "
+        event.to_hash.keys.each { |k| event[ k.sub('.','_') ] = event.remove(k) if k.include?'.' }
+      "
+  }
+
   # drop if not processed by our filters
   if ![@metadata][index_name] {
     drop { }
@@ -260,11 +266,10 @@ output {
 <% if p("logstash.elasticsearch.host", nil) %>
   if [@metadata][index_name] {
     elasticsearch {
-      host            => "<%= p("logstash.elasticsearch.host") %>"
+      hosts           => [ "<%= p("logstash.elasticsearch.host") %>" ]
       cluster         => "<%= p("logstash.elasticsearch.cluster") %>"
       idle_flush_time => <%= p("logstash.elasticsearch.idle_flush_time") %>
       workers         => <%= p("logstash.elasticsearch.workers") %>
-      protocol        => "http"
       index           => "%{[@metadata][index_name]}-%{+YYYY.MM.dd}"
       manage_template => false
     }
