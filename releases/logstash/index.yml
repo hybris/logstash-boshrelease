@@ -4,4 +4,6 @@ builds:
     version: 0.1.0
   e0ae7963-1d7c-45d6-9a41-bd481260f045:
     version: 0.3.0
+  4d3d41f3-ac14-4e7d-8690-d1462ce4b8c4:
+    version: 0.5.0
 format-version: '2'
