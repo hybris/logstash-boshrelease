@@ -264,7 +264,7 @@ output {
       cluster         => "<%= p("logstash.elasticsearch.cluster") %>"
       idle_flush_time => <%= p("logstash.elasticsearch.idle_flush_time") %>
       workers         => <%= p("logstash.elasticsearch.workers") %>
-      protocol        => "transport"
+      protocol        => "http"
       index           => "%{[@metadata][index_name]}-%{+YYYY.MM.dd}"
       manage_template => false
     }

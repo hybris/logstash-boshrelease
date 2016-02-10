@@ -3,4 +3,5 @@ final_name: logstash
 blobstore:
   provider: s3
   options:
-    bucket_name: blobs-yaas-idefix/logstash-boshrelease
+    bucket_name: blobs-yaas-idefix
+    folder: logstash-boshrelease

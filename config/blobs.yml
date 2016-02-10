@@ -7,3 +7,7 @@ logstash/logstash-1.5.1.tar.gz:
   object_id: 865be481-063b-4003-9f59-065011d95dbf
   sha: 526bf554d1f1e27354f3816c1a3576a83ac1ca05
   size: 90347364
+logstash/logstash-2.2.0.tar.gz:
+  object_id: 874b0e0e-baa5-4908-9f62-3167b28f7c0a
+  sha: b83407f640b938a04c19fd25e335b5e9e840166b
+  size: 74440588
