@@ -232,6 +232,11 @@ filter {
     remove_field => "syslog_procid"
     remove_field => "syslog_msgid"
   }
+  
+  # Make log_level a string
+  mutate {
+    convert => { "log_level" => "string" }
+  }
 
   # remove fields with empty values
   ruby {
